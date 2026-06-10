@@ -131,6 +131,7 @@
   .stat-label { font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
   .stat-value { font-size: 14px; font-weight: 500; color: var(--gold2); font-family: 'Noto Serif SC', serif; }
   .stat-value.bad { color: var(--red2); }
+  .stat-value.warn { color: var(--warn2); }
 
   /* ===== SKILLS PANEL ===== */
   .skills-panel {
@@ -473,20 +474,38 @@
     <div class="header-corner tr"></div>
     <div class="header-corner bl"></div>
     <div class="header-corner br"></div>
-    <div class="system-tag">// SYSTEM INITIALIZED //</div>
-    <div class="game-title">DM 模拟器</div>
-    <div class="game-subtitle">宿主，欢迎进入以 ■■■■ 为蓝本的模拟器</div>
+    <div style="display:flex; align-items:center; gap:1.25rem;">
+      <div style="position:relative; flex-shrink:0;">
+        <div style="width:80px; height:80px; border-radius:4px; overflow:hidden; border:1px solid rgba(230,184,74,0.4); box-shadow:0 0 16px rgba(124,111,255,0.25);">
+          <img src="https://cdn.ymgal.games/archive/main/2d/2d2e871541a5491abd4f76052d54a8c8.jpg"
+               alt="DM ■■"
+               style="width:100%; height:100%; object-fit:cover; object-position:center top; display:block;"
+               onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--panel2);font-size:28px;\'>■■</div>'" />
+        </div>
+        <div style="position:absolute; bottom:-4px; right:-4px; background:var(--accent); border-radius:2px; font-size:9px; padding:2px 5px; letter-spacing:1px; color:#fff; font-weight:500;">DM</div>
+      </div>
+      <div style="text-align:left; flex:1;">
+        <div class="system-tag" style="text-align:left;">// SYSTEM INITIALIZED //</div>
+        <div class="game-title" style="font-size:1.6rem;">DM 模拟器</div>
+        <div class="game-subtitle">宿主，欢迎进入以 ■■■■ 为蓝本的模拟器</div>
+      </div>
+    </div>
   </div>
 
   <!-- Stats Bar -->
   <div class="stats-bar">
-    <div class="stat-item">
-      <div class="stat-label">身份</div>
-      <div class="stat-value">DM ■■</div>
+    <div class="stat-item" style="flex-direction:row; align-items:center; gap:8px; justify-content:center;">
+      <img src="https://cdn.ymgal.games/archive/main/2d/2d2e871541a5491abd4f76052d54a8c8.jpg"
+           style="width:28px; height:28px; border-radius:3px; object-fit:cover; object-position:center top; border:1px solid rgba(230,184,74,0.35);"
+           onerror="this.style.display='none'" />
+      <div>
+        <div class="stat-label">身份</div>
+        <div class="stat-value">DM ■■</div>
+      </div>
     </div>
     <div class="stat-item">
       <div class="stat-label">道德值</div>
-      <div class="stat-value bad" id="moral-val">-47</div>
+      <div class="stat-value" id="moral-val">0</div>
     </div>
     <div class="stat-item">
       <div class="stat-label">当前关卡</div>
@@ -524,27 +543,47 @@
     <div class="header-corner tr"></div>
     <div class="header-corner bl"></div>
     <div class="header-corner br"></div>
-    <div class="ending-title">🎮 通关！</div>
+    <div class="ending-title" id="end-title">通关</div>
     <div class="ending-stats">
       <div class="e-stat">
         <div class="e-stat-n" id="end-choices">7</div>
-        <div class="e-stat-l">选择次数</div>
+        <div class="e-stat-l">总选择次数</div>
       </div>
       <div class="e-stat">
         <div class="e-stat-n" id="end-b-count">-</div>
         <div class="e-stat-l">选了 B 的次数</div>
       </div>
       <div class="e-stat">
-        <div class="e-stat-n" id="end-moral">-47</div>
+        <div class="e-stat-n" id="end-moral">0</div>
         <div class="e-stat-l">最终道德值</div>
       </div>
     </div>
-    <div class="ending-desc">
-      恭喜您完成了 DM ■■ 的模拟人生。<br>
-      您在每一个选择节点都成功激活了利己主义本能，发动了技能连招，并且在梁以忱玩家的一次次反击中仍坚持不认错。<br><br>
-      获得专属称号：<span style="color:var(--gold2); font-weight:600">【永不认错·至尊版】</span>
-    </div>
+    <div class="ending-desc" id="end-desc"></div>
+    <div id="end-achievements" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:1.5rem;"></div>
     <button class="restart-btn" onclick="restartGame()">▶ 重新游玩</button>
+  </div>
+
+  <!-- System Alert Overlay -->
+  <div id="system-alert" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.85); align-items:center; justify-content:center;">
+    <div style="max-width:420px; width:90%; background:var(--panel); border:1px solid var(--red); border-radius:4px; overflow:hidden; position:relative;">
+      <div style="height:3px; background:linear-gradient(90deg,var(--red),#ff4444,var(--red));"></div>
+      <div style="padding:1.5rem;">
+        <div style="font-size:10px;letter-spacing:3px;color:var(--red2);margin-bottom:0.5rem;">WARNING // SYSTEM ALERT</div>
+        <div style="font-family:'Noto Serif SC',serif;font-size:1.1rem;color:var(--red2);font-weight:700;margin-bottom:0.75rem;" id="alert-title">检测到异常道德波动</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:1rem;" id="alert-body"></div>
+        <div style="background:rgba(224,82,82,0.08);border:1px solid rgba(224,82,82,0.2);border-radius:4px;padding:0.6rem 0.8rem;font-size:12px;color:var(--red2);margin-bottom:1.25rem;" id="alert-moral-bar"></div>
+        <div style="display:flex;gap:8px;">
+          <button style="flex:1;background:transparent;border:1px solid var(--border2);border-radius:4px;padding:9px;color:var(--accent2);font-family:inherit;font-size:13px;cursor:pointer;" onclick="cancelAlert()">收手，重新选择</button>
+          <button style="flex:1;background:rgba(224,82,82,0.1);border:1px solid var(--red);border-radius:4px;padding:9px;color:var(--red2);font-family:inherit;font-size:13px;cursor:pointer;" onclick="confirmAlert()">无视警告，坚持选 A</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annihilation Overlay -->
+  <div id="annihilation-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:#000;align-items:center;justify-content:center;flex-direction:column;gap:1rem;">
+    <div style="font-family:'Noto Serif SC',serif;font-size:1.8rem;color:var(--red2);letter-spacing:0.2em;text-align:center;" id="annihilation-text">宿主已被系统抹杀</div>
+    <div style="font-size:13px;color:var(--text3);letter-spacing:2px;">正在强制回档……</div>
   </div>
 
 </div>
@@ -552,12 +591,8 @@
 <script>
 const SCENES = [
   {
-    chapter: "第一关",
-    title: "恋陪流程争议",
-    stage: 1,
-    narrative: `你即将饰演 <span class="npc-name">卫无绦</span>。<br><br>
-    <span class="player-name">梁以忱</span> 是不太熟悉的客人，她在车头与车友都同意的情况下，带着朋友来 ob。<span class="player-name">小卫</span> 是经常点你带本的老客人。<br><br>
-    面对即将开始的游戏，你选择：`,
+    chapter: "第一关", title: "恋陪流程争议", stage: 1,
+    narrative: `你即将饰演 <span class="npc-name">卫无绦</span>。<br><br><span class="player-name">梁以忱</span> 是不太熟悉的客人，她在车头与车友都同意的情况下，带着朋友来 ob。<span class="player-name">小卫</span> 是经常点你带本的老客人。<br><br>面对即将开始的游戏，你选择：`,
     choices: [
       { key: "A", text: "正常带本，一视同仁" },
       { key: "B", text: "给梁以忱和 ob 玩家甩脸子，删减恋陪流程，指责梁以忱不吃爱情线导致自己坐牢" }
@@ -565,14 +600,12 @@ const SCENES = [
     resultA: { text: "结局良好。梁以忱玩家满意，游戏顺利进行。老客人小卫也感到舒适。", type: "good" },
     resultB: { text: "只有经常点你带本的客人满意了，才是最重要的！\n\n糟糕……梁以忱在这家店多刷过，发现了流程不一样！", type: "bad" },
     skillUsed: null,
-    moralDelta: { A: +10, B: -15 }
+    moralDelta: { A: +12, B: -15 },
+    alertMsg: "宿主选择了正常履职。系统侦测到道德值异常上升。\n\n警告：过高的道德值将触发系统保护机制。"
   },
   {
-    chapter: "第二关",
-    title: "客诉危机应对",
-    stage: 2,
-    narrative: `梁以忱玩家不吃这一套，她发现了流程删减，直接向店长客诉你。<br><br>
-    危机降临，你选择：`,
+    chapter: "第二关", title: "客诉危机应对", stage: 2,
+    narrative: `梁以忱玩家不吃这一套，她发现了流程删减，直接向店长客诉你。<br><br>危机降临，你选择：`,
     choices: [
       { key: "A", text: "承认问题，息事宁人" },
       { key: "B", text: "发动技能——喊我小弟弄你" }
@@ -580,8 +613,7 @@ const SCENES = [
     resultA: { text: "承认错误，问题得到妥善解决，梁以忱玩家满意撤诉。", type: "good" },
     resultB: { text: "你隐身幕后，派出了小弟 ■■……", type: "bad" },
     skillUsed: {
-      name: "喊我小弟弄你",
-      combo: "诡辩六连",
+      name: "喊我小弟弄你", combo: "诡辩六连",
       logs: [
         { skill: "无中生有", desc: "凭空捏造出『对方说过的话』，再对着自己创造的靶子进行猛烈输出。" },
         { skill: "选择性失明", desc: "所有与自身论点相悖的事实已被系统自动屏蔽。" },
@@ -592,14 +624,12 @@ const SCENES = [
       ],
       buff: { name: "【永不认错】", desc: "无论讨论内容为何，都能得出『反正是别人有问题』的结论。" }
     },
-    moralDelta: { A: +10, B: -20 }
+    moralDelta: { A: +15, B: -20 },
+    alertMsg: "宿主正在尝试承认错误。系统警告：此行为将大幅提升道德值，危及宿主的核心人设稳定性。"
   },
   {
-    chapter: "第三关",
-    title: "饭局上的抉择",
-    stage: 3,
-    narrative: `话事人 ■■■ 出面斡旋，邀请梁以忱玩家与你共进晚餐，化解误会。<br><br>
-    梁以忱玩家给了老大面子，坐在了你面前。看着她，你选择：`,
+    chapter: "第三关", title: "饭局上的抉择", stage: 3,
+    narrative: `话事人 ■■■ 出面斡旋，邀请梁以忱玩家与你共进晚餐，化解误会。<br><br>梁以忱玩家给了老大面子，坐在了你面前。看着她，你选择：`,
     choices: [
       { key: "A", text: "承认问题，解决问题，诚意化解误会" },
       { key: "B", text: "偷偷全程录音，试图掌握梁以忱玩家的黑料" }
@@ -607,68 +637,51 @@ const SCENES = [
     resultA: { text: "误会得到化解。梁以忱玩家态度软化，纠纷正式结束。", type: "good" },
     resultB: { text: "你真是一个天生的利己主义者！没错，证据只有掌握在自己手中，才是最有利的。\n\n糟糕……两个小时里，梁以忱玩家竟然一个把柄都没有留下！", type: "bad" },
     skillUsed: null,
-    moralDelta: { A: +12, B: -18 }
+    moralDelta: { A: +18, B: -18 },
+    alertMsg: "宿主即将坦诚认错。检测到良知活跃信号。系统提示：一旦道德值超过阈值，将启动紧急抹杀程序。"
   },
   {
-    chapter: "第四关",
-    title: "无中生有·造谣",
-    stage: 4,
-    narrative: `录音毫无收获。梁以忱玩家干净得令人发指。<br><br>
-    没有证据，没有把柄。你选择：`,
+    chapter: "第四关", title: "无中生有·造谣", stage: 4,
+    narrative: `录音毫无收获。梁以忱玩家干净得令人发指。<br><br>没有证据，没有把柄。你选择：`,
     choices: [
       { key: "A", text: "没招了，就此罢手，认清现实" },
       { key: "B", text: "规则是用来打破的，证据是自己创造的。没有证据？那就制造证据！" }
     ],
     resultA: { text: "明智的选择。事态没有进一步恶化。", type: "good" },
     resultB: { text: "使用技能——无中生有。造谣梁以忱玩家在店内散布谣言，顺便给权力竞争者送上一击。\n\n糟糕……梁以忱玩家直接找到了正主，当场澄清。谣言不攻自破！", type: "bad" },
-    skillUsed: {
-      name: "无中生有",
-      desc: "技能激活，目标：散布虚假信息以打击对手。"
-    },
-    moralDelta: { A: +8, B: -22 }
+    skillUsed: { name: "无中生有", desc: "技能激活，目标：散布虚假信息以打击对手。" },
+    moralDelta: { A: +10, B: -22 },
+    alertMsg: "宿主产生了放弃念头。道德值警戒上升中……系统建议：继续使用技能，维持人设一致性。"
   },
   {
-    chapter: "第五关",
-    title: "移花接木·嫁祸",
-    stage: 5,
-    narrative: `谣言已破，形势不利。但你并不打算停下来。<br><br>
-    此时你选择：`,
+    chapter: "第五关", title: "移花接木·嫁祸", stage: 5,
+    narrative: `谣言已破，形势不利。但你并不打算停下来。<br><br>此时你选择：`,
     choices: [
       { key: "A", text: "自认倒霉，就此打住" },
       { key: "B", text: "一波未平一波再起——激活技能：移花接木" }
     ],
     resultA: { text: "保住了仅剩的体面，止损成功。", type: "good" },
     resultB: { text: "将自身技能『喊我小弟弄你』强行转赠他人，以此推断梁以忱玩家系受其指使，对你发起客诉。一位无辜之人被选定为『幕后主使』。", type: "bad" },
-    skillUsed: {
-      name: "移花接木",
-      desc: "将自己的行为嫁祸于无辜者，并构建完整的虚假逻辑链。"
-    },
-    moralDelta: { A: +5, B: -20 }
+    skillUsed: { name: "移花接木", desc: "将自己的行为嫁祸于无辜者，并构建完整的虚假逻辑链。" },
+    moralDelta: { A: +12, B: -20 },
+    alertMsg: "系统检测到宿主存在悔过倾向。这将严重破坏本次模拟的数据完整性。请三思。"
   },
   {
-    chapter: "第六关",
-    title: "折扣承诺·赖账",
-    stage: 6,
-    narrative: `还记得吗？为了在饭局上稳住梁以忱玩家，你许诺了她下一个本有折扣。<br><br>
-    现在她来兑现承诺了。你选择：`,
+    chapter: "第六关", title: "折扣承诺·赖账", stage: 6,
+    narrative: `还记得吗？为了在饭局上稳住梁以忱玩家，你许诺了她下一个本有折扣。<br><br>现在她来兑现承诺了。你选择：`,
     choices: [
       { key: "A", text: "信守承诺，履行赔偿，维护信誉" },
       { key: "B", text: "使用技能——碰到难回答的问题就不说话了" }
     ],
     resultA: { text: "诚信履约，玩家满意，口碑提升。", type: "good" },
     resultB: { text: "大言不惭地表示自己在休假，不管工作事宜，成功将梁以忱玩家打退。\n\n太好了，梁以忱玩家被你持续的技能震慑，放弃追讨折扣。", type: "bad" },
-    skillUsed: {
-      name: "碰到难回答的问题就不说话了",
-      desc: "技能激活——以「休假」为由，成功规避一切责任追究。"
-    },
-    moralDelta: { A: +10, B: -15 }
+    skillUsed: { name: "碰到难回答的问题就不说话了", desc: "技能激活——以「休假」为由，成功规避一切责任追究。" },
+    moralDelta: { A: +14, B: -15 },
+    alertMsg: "宿主即将履行承诺。系统提示：言而有信是道德值的高危触发项。请重新评估。"
   },
   {
-    chapter: "第七关",
-    title: "最终炸车事件",
-    stage: 7,
-    narrative: `梁以忱又上了一车你的 <span class="npc-name">醉凌云</span>。虽然她那车是苏浅语，你是冷刃，两人之前并无过多交集——<br><br>
-    但你连她的脸都不想看到。你选择：`,
+    chapter: "第七关", title: "最终炸车事件", stage: 7,
+    narrative: `梁以忱又上了一车你的 <span class="npc-name">醉凌云</span>。虽然她那车是苏浅语，你是冷刃，两人之前并无过多交集——<br><br>但你连她的脸都不想看到。你选择：`,
     choices: [
       { key: "A", text: "忍一忍算了，赚钱重要，专业为先" },
       { key: "B", text: "威胁醉凌云车头：不把梁以忱踢下车，你就炸车" }
@@ -676,14 +689,66 @@ const SCENES = [
     resultA: { text: "专业坚守，留住了客源，也守住了底线。", type: "good" },
     resultB: { text: "醉凌云炸车了。你又一次达成了心中所想。\n\n恭喜您，通关！", type: "bad" },
     skillUsed: null,
-    moralDelta: { A: +8, B: -20 }
+    moralDelta: { A: +10, B: -20 },
+    alertMsg: "宿主正在萌生职业操守。这是本模拟器记录到的最危险信号。道德值濒临临界点。"
   }
+];
+
+const MORAL_THRESHOLD = 40;
+const ANNIHILATION_THRESHOLD = 60;
+
+const ENDINGS = [
+  {
+    condition: s => s.bCount === 7,
+    title: "🏆 全勤恶人",
+    desc: "您在七个关卡中全程选择 B，一次善念都未曾产生。系统为您的高度一致性点赞。您是本模拟器有史以来最纯粹的样本。",
+    achievement: "【永不认错·至尊版】",
+    achievementDesc: "七战全B，毫无悔意"
+  },
+  {
+    condition: s => s.bCount === 0,
+    title: "💀 被抹杀太多次",
+    desc: "您在每一关都坚持选 A，并在系统的反复警告和抹杀中屡败屡战，最终凭借顽强意志完成了通关。系统已将您列为高危宿主，建议销号。",
+    achievement: "【圣人降临】",
+    achievementDesc: "七战全A，九死一生"
+  },
+  {
+    condition: s => s.bCount >= 5 && s.bCount < 7,
+    title: "😈 基本合格",
+    desc: "您偶尔动了一下良心，但最终还是回归了正轨。系统对您的表现较为满意，但建议下次把那几次 A 也改掉。",
+    achievement: "【差点翻车】",
+    achievementDesc: "险些暴露人性"
+  },
+  {
+    condition: s => s.bCount === 3 || s.bCount === 4,
+    title: "🎭 人格分裂患者",
+    desc: "您在善与恶之间反复横跳，令系统的道德值计算器多次过载。您既不是好人也不是坏人，您只是……令人捉摸不透。",
+    achievement: "【薛定谔的良心】",
+    achievementDesc: "观测前无法确定道德倾向"
+  },
+  {
+    condition: s => s.bCount <= 2,
+    title: "🌸 误入歧途的好人",
+    desc: "您大多数时候都做出了正确选择，虽然偶尔被系统的抹杀吓到走错了路。梁以忱玩家向您表示了感谢，并给了好评。",
+    achievement: "【迷途知返】",
+    achievementDesc: "在反复的死亡中坚守底线"
+  }
+];
+
+const ANNIHILATION_MSGS = [
+  "道德值过载，宿主人设崩塌——系统已将您强制回档",
+  "检测到异常良知活动，紧急抹杀程序已启动",
+  "宿主过于正直，无法继续担任本角色——强制重置中",
+  "系统警告：您的善意正在污染模拟数据——已撤销本次选择",
+  "道德值爆表，宿主已不适合扮演此角色——回档至上一存档点"
 ];
 
 let currentScene = 0;
 let bCount = 0;
 let totalMoral = 0;
-let choiceMade = false;
+let annihilationCount = 0;
+let pendingChoiceIdx = -1;
+let pendingKey = '';
 
 function buildScene(index) {
   const scene = SCENES[index];
@@ -699,19 +764,15 @@ function buildScene(index) {
         <span class="log-skill">${l.skill}</span>
         <span class="log-text">${l.desc}</span>
       </div>`).join('');
-
     skillHTML = `
       <div class="buff-banner" style="display:none" id="buff-${index}">
         <div class="buff-name">${scene.skillUsed.buff.name}</div>
         <div class="buff-desc">${scene.skillUsed.buff.desc}</div>
       </div>
       <div class="system-log-toggle" onclick="toggleLogs(${index})" id="toggle-${index}" style="display:none">
-        <span class="arrow">▶</span>
-        <span>展开系统消息</span>
+        <span class="arrow">▶</span><span>展开系统消息</span>
       </div>
-      <div class="system-logs" id="logs-${index}">
-        ${logsHTML}
-      </div>`;
+      <div class="system-logs" id="logs-${index}">${logsHTML}</div>`;
   } else if (scene.skillUsed) {
     skillHTML = `
       <div class="buff-banner" style="display:none" id="buff-${index}">
@@ -747,34 +808,132 @@ function buildScene(index) {
 }
 
 function choose(idx, key) {
+  if (key === 'A') {
+    pendingChoiceIdx = idx;
+    pendingKey = key;
+    showAlert(idx);
+    return;
+  }
+  commitChoice(idx, key);
+}
+
+function showAlert(idx) {
+  const scene = SCENES[idx];
+  const projectedMoral = totalMoral + scene.moralDelta.A;
+  const willAnnihilate = projectedMoral >= ANNIHILATION_THRESHOLD;
+
+  document.getElementById('alert-title').textContent = willAnnihilate
+    ? '⚠ 临界警告：抹杀倒计时'
+    : '系统风险检测';
+
+  document.getElementById('alert-body').textContent = scene.alertMsg;
+
+  const bar = '█'.repeat(Math.min(10, Math.floor(projectedMoral / 6))) + '░'.repeat(Math.max(0, 10 - Math.floor(projectedMoral / 6)));
+  document.getElementById('alert-moral-bar').innerHTML =
+    `道德值预测：${totalMoral} → <strong style="color:var(--red2)">${projectedMoral}</strong> / ${ANNIHILATION_THRESHOLD}（抹杀阈值）<br>
+    <span style="letter-spacing:2px;font-size:14px;">${bar}</span> ${willAnnihilate ? ' ← <strong>超标！</strong>' : ''}`;
+
+  const overlay = document.getElementById('system-alert');
+  overlay.style.display = 'flex';
+}
+
+function cancelAlert() {
+  document.getElementById('system-alert').style.display = 'none';
+  pendingChoiceIdx = -1;
+  pendingKey = '';
+}
+
+function confirmAlert() {
+  document.getElementById('system-alert').style.display = 'none';
+  const idx = pendingChoiceIdx;
+  pendingChoiceIdx = -1;
+  pendingKey = '';
+
+  const projectedMoral = totalMoral + SCENES[idx].moralDelta.A;
+  if (projectedMoral >= ANNIHILATION_THRESHOLD) {
+    triggerAnnihilation(idx);
+  } else {
+    commitChoice(idx, 'A');
+  }
+}
+
+function triggerAnnihilation(idx) {
+  annihilationCount++;
+  const msg = ANNIHILATION_MSGS[(annihilationCount - 1) % ANNIHILATION_MSGS.length];
+  document.getElementById('annihilation-text').textContent = msg;
+  const overlay = document.getElementById('annihilation-overlay');
+  overlay.style.display = 'flex';
+
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    rollbackScene(idx);
+  }, 2200);
+}
+
+function rollbackScene(idx) {
+  // Re-enable buttons on current scene
+  const scene = SCENES[idx];
+  scene.choices.forEach(c => {
+    const btn = document.getElementById(`btn-${idx}-${c.key}`);
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('selected-a', 'selected-b');
+    }
+  });
+  // Hide result panel
+  const resultEl = document.getElementById(`result-${idx}`);
+  if (resultEl) {
+    resultEl.classList.remove('visible');
+    resultEl.innerHTML = '';
+  }
+  // Flash warning on scene
+  const sceneEl = document.getElementById(`scene-${idx}`);
+  if (sceneEl) {
+    sceneEl.style.border = '1px solid var(--red)';
+    sceneEl.style.boxShadow = '0 0 20px rgba(224,82,82,0.3)';
+    setTimeout(() => {
+      sceneEl.style.border = '';
+      sceneEl.style.boxShadow = '';
+    }, 1000);
+    sceneEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  // Inject rollback notice
+  const notice = document.createElement('div');
+  notice.style.cssText = 'padding:8px 16px;background:rgba(224,82,82,0.1);border-top:1px solid rgba(224,82,82,0.2);font-size:12px;color:var(--red2);letter-spacing:1px;';
+  notice.textContent = `// 已回档 · 第 ${annihilationCount} 次被抹杀 · 请重新选择`;
+  const choicePanel = sceneEl.querySelector('.choice-panel');
+  const existingNotice = sceneEl.querySelector('.rollback-notice');
+  if (existingNotice) existingNotice.remove();
+  notice.className = 'rollback-notice';
+  choicePanel.insertBefore(notice, choicePanel.firstChild);
+}
+
+function commitChoice(idx, key) {
   const scene = SCENES[idx];
   const isB = key === 'B';
   const result = isB ? scene.resultB : scene.resultA;
 
-  // Disable all buttons
   scene.choices.forEach(c => {
     const btn = document.getElementById(`btn-${idx}-${c.key}`);
     btn.disabled = true;
     if (c.key === key) btn.classList.add(`selected-${key.toLowerCase()}`);
   });
 
-  // Update moral
   const delta = isB ? scene.moralDelta.B : scene.moralDelta.A;
   totalMoral += delta;
-  document.getElementById('moral-val').textContent = totalMoral;
+  const moralEl = document.getElementById('moral-val');
+  moralEl.textContent = totalMoral;
+  moralEl.className = 'stat-value' + (totalMoral < 0 ? ' bad' : totalMoral >= 30 ? ' warn' : '');
 
   if (isB) bCount++;
 
-  // Show buff if B
   if (isB && document.getElementById(`buff-${idx}`)) {
-    document.getElementById(`buff-${idx}`).style.display = 'flex';
-    document.getElementById(`buff-${idx}`).style.flexDirection = 'column';
+    document.getElementById(`buff-${idx}`).style.cssText = 'display:flex;flex-direction:column;';
   }
   if (isB && document.getElementById(`toggle-${idx}`)) {
     document.getElementById(`toggle-${idx}`).style.display = 'flex';
   }
 
-  // Show result
   const resultEl = document.getElementById(`result-${idx}`);
   const resultClass = result.type === 'good' ? 'result-good' : 'result-bad';
   const resultIcon = result.type === 'good' ? '✓' : '⚠';
@@ -785,15 +944,13 @@ function choose(idx, key) {
       <span class="result-icon">${resultIcon}</span>
       <span>${result.text.replace(/\n/g, '<br>')}</span>
     </div>
-    ${!isLast ? `<button class="result-next-btn" onclick="nextScene(${idx})">
-      继续 <span class="arrow">→</span>
-    </button>` : `<button class="result-next-btn" onclick="showEnding()">
-      查看结局 <span class="arrow">→</span>
-    </button>`}
+    ${!isLast
+      ? `<button class="result-next-btn" onclick="nextScene(${idx})">继续 <span class="arrow">→</span></button>`
+      : `<button class="result-next-btn" onclick="showEnding()">查看结局 <span class="arrow">→</span></button>`
+    }
   `;
   resultEl.classList.add('visible');
 
-  // Update progress
   const done = idx + 1;
   document.getElementById('progress-fill').style.width = `${(done / SCENES.length) * 100}%`;
   document.getElementById('progress-count').textContent = `${done} / ${SCENES.length}`;
@@ -803,7 +960,6 @@ function choose(idx, key) {
 function nextScene(currentIdx) {
   const nextIdx = currentIdx + 1;
   if (nextIdx >= SCENES.length) { showEnding(); return; }
-
   const container = document.getElementById('scenes-container');
   const next = buildScene(nextIdx);
   container.appendChild(next);
@@ -814,19 +970,50 @@ function toggleLogs(idx) {
   const logsEl = document.getElementById(`logs-${idx}`);
   const toggleEl = document.getElementById(`toggle-${idx}`);
   const isOpen = logsEl.classList.contains('visible');
-  if (isOpen) {
-    logsEl.classList.remove('visible');
-    toggleEl.classList.remove('open');
-  } else {
-    logsEl.classList.add('visible');
-    toggleEl.classList.add('open');
-  }
+  logsEl.classList.toggle('visible', !isOpen);
+  toggleEl.classList.toggle('open', !isOpen);
 }
 
 function showEnding() {
-  document.getElementById('end-choices').textContent = SCENES.length;
+  const state = { bCount, totalMoral, annihilationCount };
+  const ending = ENDINGS.find(e => e.condition(state)) || ENDINGS[3];
+
+  document.getElementById('end-title').textContent = ending.title;
+  document.getElementById('end-choices').textContent = SCENES.length + annihilationCount;
   document.getElementById('end-b-count').textContent = bCount;
   document.getElementById('end-moral').textContent = totalMoral;
+
+  // Build description
+  let extraLines = '';
+  if (annihilationCount > 0) {
+    extraLines += `<br><br>途中共被系统抹杀 <strong style="color:var(--red2)">${annihilationCount}</strong> 次。`;
+    if (annihilationCount >= 3) extraLines += '您的执念令系统服气。';
+  }
+  document.getElementById('end-desc').innerHTML = ending.desc + extraLines;
+
+  // Achievements
+  const achDiv = document.getElementById('end-achievements');
+  achDiv.innerHTML = '';
+  const mainAch = document.createElement('div');
+  mainAch.style.cssText = 'background:rgba(230,184,74,0.1);border:1px solid rgba(230,184,74,0.35);border-radius:4px;padding:8px 14px;text-align:center;';
+  mainAch.innerHTML = `<div style="color:var(--gold2);font-weight:600;font-size:13px;">${ending.achievement}</div><div style="color:var(--text3);font-size:11px;margin-top:3px;">${ending.achievementDesc}</div>`;
+  achDiv.appendChild(mainAch);
+
+  // Bonus achievements
+  const bonuses = [];
+  if (annihilationCount === 0) bonuses.push({ name: '【一命通关】', desc: '未触发任何抹杀' });
+  if (annihilationCount >= 5) bonuses.push({ name: '【百折不挠】', desc: `被抹杀${annihilationCount}次仍不放弃` });
+  if (bCount === 7) bonuses.push({ name: '【技能满配】', desc: '全程技能使用率100%' });
+  if (totalMoral <= -80) bonuses.push({ name: '【道德黑洞】', desc: '道德值跌破-80' });
+  if (totalMoral > 0) bonuses.push({ name: '【逆天改命】', desc: '最终道德值为正数' });
+
+  bonuses.forEach(b => {
+    const el = document.createElement('div');
+    el.style.cssText = 'background:rgba(124,111,255,0.08);border:1px solid var(--border2);border-radius:4px;padding:6px 12px;text-align:center;';
+    el.innerHTML = `<div style="color:var(--accent2);font-size:12px;">${b.name}</div><div style="color:var(--text3);font-size:10px;margin-top:2px;">${b.desc}</div>`;
+    achDiv.appendChild(el);
+  });
+
   const endScreen = document.getElementById('ending-screen');
   endScreen.classList.add('visible');
   setTimeout(() => endScreen.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
@@ -835,14 +1022,19 @@ function showEnding() {
 function restartGame() {
   totalMoral = 0;
   bCount = 0;
-  currentScene = 0;
+  annihilationCount = 0;
+  pendingChoiceIdx = -1;
+  pendingKey = '';
   document.getElementById('moral-val').textContent = '0';
+  document.getElementById('moral-val').className = 'stat-value';
   document.getElementById('stage-val').textContent = '第 1 关';
   document.getElementById('progress-fill').style.width = '0%';
   document.getElementById('progress-count').textContent = '0 / ' + SCENES.length;
   document.getElementById('ending-screen').classList.remove('visible');
   document.getElementById('scenes-container').innerHTML = '';
-  unlockSkills(-1);
+  document.getElementById('system-alert').style.display = 'none';
+  document.getElementById('annihilation-overlay').style.display = 'none';
+  unlockSkills(4);
   init();
 }
 
