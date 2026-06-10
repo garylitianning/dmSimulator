@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DM 模拟器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0a0c14;
+    --bg2: #111420;
+    --bg3: #181c2e;
+    --panel: #1a1e30;
+    --panel2: #1f2438;
+    --border: rgba(120,140,255,0.15);
+    --border2: rgba(120,140,255,0.28);
+    --accent: #7c6fff;
+    --accent2: #b39aff;
+    --gold: #e6b84a;
+    --gold2: #ffd97a;
+    --red: #e05252;
+    --red2: #ff8585;
+    --green: #4caf7a;
+    --green2: #80d4a8;
+    --text: #e8e6f0;
+    --text2: #9b97b8;
+    --text3: #6b6887;
+    --system: #4a9e8a;
+    --system2: #7dd4c0;
+    --warn: #e09a3a;
+    --warn2: #f5c77a;
+    --shadow: 0 4px 32px rgba(0,0,0,0.6);
+    --glow: 0 0 20px rgba(124,111,255,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .scanlines {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.04) 2px,
+      rgba(0,0,0,0.04) 4px
+    );
+  }
+
+  .game-wrap {
+    width: 100%; max-width: 780px;
+    padding: 2rem 1rem 4rem;
+    position: relative; z-index: 1;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding: 2rem 1.5rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--panel);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent);
+  }
+  .header-corner {
+    position: absolute;
+    width: 18px; height: 18px;
+    border-color: var(--gold);
+    border-style: solid;
+    opacity: 0.5;
+  }
+  .header-corner.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+  .header-corner.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+  .header-corner.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+  .header-corner.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+  .system-tag {
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--system2); margin-bottom: 0.5rem;
+    font-family: 'Noto Serif SC', serif;
+  }
+  .game-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 2rem; font-weight: 700;
+    color: var(--gold2);
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 30px rgba(230,184,74,0.3);
+    margin-bottom: 0.4rem;
+  }
+  .game-subtitle {
+    font-size: 12px; color: var(--text3);
+    letter-spacing: 1px;
+  }
+
+  /* ===== PLAYER STATS BAR ===== */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+  .stat-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .stat-label { font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+  .stat-value { font-size: 14px; font-weight: 500; color: var(--gold2); font-family: 'Noto Serif SC', serif; }
+  .stat-value.bad { color: var(--red2); }
+
+  /* ===== SKILLS PANEL ===== */
+  .skills-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .skills-header {
+    font-size: 11px; letter-spacing: 2px; color: var(--accent2);
+    text-transform: uppercase; margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .skills-header::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+  .skills-grid {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .skill-badge {
+    font-size: 11px; padding: 3px 10px;
+    border: 1px solid var(--border2);
+    border-radius: 2px;
+    color: var(--accent2);
+    background: rgba(124,111,255,0.08);
+    cursor: default;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .skill-badge:hover {
+    background: rgba(124,111,255,0.18);
+    border-color: var(--accent);
+  }
+  .skill-badge.unlocked {
+    color: var(--gold2);
+    border-color: rgba(230,184,74,0.4);
+    background: rgba(230,184,74,0.07);
+  }
+
+  /* ===== MAIN SCENE ===== */
+  .scene-container {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+
+  .scene-header {
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .scene-chapter {
+    font-size: 10px; letter-spacing: 2px; color: var(--text3);
+    text-transform: uppercase;
+  }
+  .scene-title {
+    font-size: 13px; color: var(--accent2); font-weight: 500;
+  }
+  .scene-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .scene-body { padding: 1.5rem 1.5rem 1.25rem; }
+
+  .narrator-text {
+    color: var(--text);
+    font-size: 14.5px;
+    line-height: 1.85;
+    margin-bottom: 1rem;
+  }
+  .narrator-text .npc-name {
+    color: var(--gold2);
+    font-weight: 500;
+  }
+  .narrator-text .player-name {
+    color: var(--accent2);
+    font-weight: 500;
+  }
+
+  /* ===== BUFF BANNER ===== */
+  .buff-banner {
+    background: rgba(224,82,82,0.08);
+    border: 1px solid rgba(224,82,82,0.25);
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .buff-name {
+    font-size: 13px; font-weight: 700;
+    color: var(--red2); letter-spacing: 1px;
+    font-family: 'Noto Serif SC', serif;
+  }
+  .buff-desc { font-size: 12px; color: var(--text2); }
+
+  /* ===== SYSTEM LOGS ===== */
+  .system-log-toggle {
+    font-size: 11px; color: var(--system2);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 0;
+    user-select: none;
+    letter-spacing: 0.5px;
+  }
+  .system-log-toggle .arrow { transition: transform 0.25s; display: inline-block; }
+  .system-log-toggle.open .arrow { transform: rotate(90deg); }
+
+  .system-logs {
+    background: rgba(10,12,20,0.6);
+    border: 1px solid rgba(74,158,138,0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.35s ease;
+  }
+  .system-logs.visible { max-height: 600px; }
+
+  .log-line {
+    display: flex; gap: 8px;
+    padding: 5px 12px;
+    border-bottom: 1px solid rgba(74,158,138,0.08);
+    font-size: 12px;
+    color: var(--text2);
+    font-family: 'Noto Serif SC', serif;
+  }
+  .log-line:last-child { border-bottom: none; }
+  .log-slash { color: var(--system2); flex-shrink: 0; font-weight: 700; }
+  .log-skill { color: var(--system2); font-weight: 500; flex-shrink: 0; }
+  .log-text { color: var(--text3); font-size: 11.5px; }
+
+  /* ===== CHOICE PANEL ===== */
+  .choice-panel {
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+  .choice-label {
+    font-size: 11px; letter-spacing: 2px; color: var(--text3);
+    text-transform: uppercase; margin-bottom: 0.75rem;
+  }
+  .choices { display: flex; flex-direction: column; gap: 8px; }
+
+  .choice-btn {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex; align-items: flex-start; gap: 12px;
+    transition: all 0.2s;
+    text-align: left;
+    font-family: inherit;
+    color: var(--text);
+    width: 100%;
+  }
+  .choice-btn:hover {
+    background: rgba(124,111,255,0.1);
+    border-color: var(--accent);
+    transform: translateX(3px);
+  }
+  .choice-btn:active { transform: translateX(1px) scale(0.99); }
+  .choice-btn.selected-a {
+    border-color: var(--green);
+    background: rgba(76,175,122,0.1);
+  }
+  .choice-btn.selected-b {
+    border-color: var(--red);
+    background: rgba(224,82,82,0.1);
+    animation: flash-red 0.4s ease;
+  }
+  @keyframes flash-red {
+    0% { background: rgba(224,82,82,0.25); }
+    100% { background: rgba(224,82,82,0.1); }
+  }
+  .choice-btn:disabled {
+    cursor: default; transform: none;
+    opacity: 0.6;
+  }
+  .choice-key {
+    font-size: 11px; font-weight: 700;
+    width: 22px; height: 22px;
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: var(--accent2);
+    margin-top: 1px;
+  }
+  .choice-key.key-a { color: var(--green2); border-color: rgba(76,175,122,0.4); }
+  .choice-key.key-b { color: var(--red2); border-color: rgba(224,82,82,0.4); }
+  .choice-text { font-size: 13.5px; line-height: 1.6; }
+
+  /* ===== RESULT PANEL ===== */
+  .result-panel {
+    padding: 1rem 1.5rem;
+    background: rgba(0,0,0,0.3);
+    border-top: 1px solid var(--border);
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .result-panel.visible { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-good {
+    color: var(--green2);
+    font-size: 13px; padding: 8px 0;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .result-bad {
+    color: var(--red2);
+    font-size: 13px; padding: 8px 0;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .result-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .result-next-btn {
+    margin-top: 12px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 8px 20px;
+    color: var(--accent2);
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .result-next-btn:hover {
+    background: rgba(124,111,255,0.1);
+    border-color: var(--accent);
+  }
+  .result-next-btn .arrow { transition: transform 0.2s; }
+  .result-next-btn:hover .arrow { transform: translateX(3px); }
+
+  /* ===== PROGRESS ===== */
+  .progress-bar-wrap {
+    margin-bottom: 1.5rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .progress-label { font-size: 11px; color: var(--text3); white-space: nowrap; }
+  .progress-track {
+    flex: 1; height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+    transition: width 0.5s ease;
+  }
+  .progress-count { font-size: 11px; color: var(--text3); white-space: nowrap; }
+
+  /* ===== ENDING ===== */
+  .ending-screen {
+    display: none;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .ending-screen.visible { display: block; }
+  .ending-screen::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--red), var(--gold), var(--red), transparent);
+  }
+  .ending-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.6rem; color: var(--gold2);
+    margin-bottom: 1rem; letter-spacing: 0.1em;
+  }
+  .ending-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; margin: 1.5rem 0;
+  }
+  .e-stat {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 12px 8px;
+  }
+  .e-stat-n { font-size: 1.4rem; font-weight: 700; color: var(--gold2); }
+  .e-stat-l { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .ending-desc {
+    font-size: 13.5px; color: var(--text2);
+    line-height: 1.8; margin-bottom: 1.5rem;
+    text-align: left;
+  }
+  .restart-btn {
+    background: rgba(124,111,255,0.1);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 10px 28px;
+    color: var(--accent2);
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px; letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .restart-btn:hover { background: rgba(124,111,255,0.2); }
+
+  /* ===== SCROLL REVEAL ===== */
+  .scene-container.hidden { display: none; }
+
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="game-wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-corner tl"></div>
+    <div class="header-corner tr"></div>
+    <div class="header-corner bl"></div>
+    <div class="header-corner br"></div>
+    <div class="system-tag">// SYSTEM INITIALIZED //</div>
+    <div class="game-title">DM 模拟器</div>
+    <div class="game-subtitle">宿主，欢迎进入以 ■■■■ 为蓝本的模拟器</div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-label">身份</div>
+      <div class="stat-value">DM ■■</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">道德值</div>
+      <div class="stat-value bad" id="moral-val">-47</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">当前关卡</div>
+      <div class="stat-value" id="stage-val">第 1 关</div>
+    </div>
+  </div>
+
+  <!-- Skills Panel -->
+  <div class="skills-panel">
+    <div class="skills-header">新手技能包</div>
+    <div class="skills-grid" id="skills-grid">
+      <span class="skill-badge" data-skill="0">喊我小弟弄你</span>
+      <span class="skill-badge" data-skill="1">找我老大弄你</span>
+      <span class="skill-badge" data-skill="2">无中生有</span>
+      <span class="skill-badge" data-skill="3">移花接木</span>
+      <span class="skill-badge" data-skill="4">碰到难回答的问题就不说话了</span>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-bar-wrap">
+    <span class="progress-label">游戏进度</span>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+    </div>
+    <span class="progress-count" id="progress-count">0 / 7</span>
+  </div>
+
+  <!-- Scenes will be injected here -->
+  <div id="scenes-container"></div>
+
+  <!-- Ending Screen -->
+  <div class="ending-screen" id="ending-screen">
+    <div class="header-corner tl"></div>
+    <div class="header-corner tr"></div>
+    <div class="header-corner bl"></div>
+    <div class="header-corner br"></div>
+    <div class="ending-title">🎮 通关！</div>
+    <div class="ending-stats">
+      <div class="e-stat">
+        <div class="e-stat-n" id="end-choices">7</div>
+        <div class="e-stat-l">选择次数</div>
+      </div>
+      <div class="e-stat">
+        <div class="e-stat-n" id="end-b-count">-</div>
+        <div class="e-stat-l">选了 B 的次数</div>
+      </div>
+      <div class="e-stat">
+        <div class="e-stat-n" id="end-moral">-47</div>
+        <div class="e-stat-l">最终道德值</div>
+      </div>
+    </div>
+    <div class="ending-desc">
+      恭喜您完成了 DM ■■ 的模拟人生。<br>
+      您在每一个选择节点都成功激活了利己主义本能，发动了技能连招，并且在梁以忱玩家的一次次反击中仍坚持不认错。<br><br>
+      获得专属称号：<span style="color:var(--gold2); font-weight:600">【永不认错·至尊版】</span>
+    </div>
+    <button class="restart-btn" onclick="restartGame()">▶ 重新游玩</button>
+  </div>
+
+</div>
+
+<script>
+const SCENES = [
+  {
+    chapter: "第一关",
+    title: "恋陪流程争议",
+    stage: 1,
+    narrative: `你即将饰演 <span class="npc-name">卫无绦</span>。<br><br>
+    <span class="player-name">梁以忱</span> 是不太熟悉的客人，她在车头与车友都同意的情况下，带着朋友来 ob。<span class="player-name">小卫</span> 是经常点你带本的老客人。<br><br>
+    面对即将开始的游戏，你选择：`,
+    choices: [
+      { key: "A", text: "正常带本，一视同仁" },
+      { key: "B", text: "给梁以忱和 ob 玩家甩脸子，删减恋陪流程，指责梁以忱不吃爱情线导致自己坐牢" }
+    ],
+    resultA: { text: "结局良好。梁以忱玩家满意，游戏顺利进行。老客人小卫也感到舒适。", type: "good" },
+    resultB: { text: "只有经常点你带本的客人满意了，才是最重要的！\n\n糟糕……梁以忱在这家店多刷过，发现了流程不一样！", type: "bad" },
+    skillUsed: null,
+    moralDelta: { A: +10, B: -15 }
+  },
+  {
+    chapter: "第二关",
+    title: "客诉危机应对",
+    stage: 2,
+    narrative: `梁以忱玩家不吃这一套，她发现了流程删减，直接向店长客诉你。<br><br>
+    危机降临，你选择：`,
+    choices: [
+      { key: "A", text: "承认问题，息事宁人" },
+      { key: "B", text: "发动技能——喊我小弟弄你" }
+    ],
+    resultA: { text: "承认错误，问题得到妥善解决，梁以忱玩家满意撤诉。", type: "good" },
+    resultB: { text: "你隐身幕后，派出了小弟 ■■……", type: "bad" },
+    skillUsed: {
+      name: "喊我小弟弄你",
+      combo: "诡辩六连",
+      logs: [
+        { skill: "无中生有", desc: "凭空捏造出『对方说过的话』，再对着自己创造的靶子进行猛烈输出。" },
+        { skill: "选择性失明", desc: "所有与自身论点相悖的事实已被系统自动屏蔽。" },
+        { skill: "偷换概念", desc: "成功将梁以忱玩家『希望恋陪正常互动』曲解为『要求全程独占陪玩』。" },
+        { skill: "脑补大师", desc: "无需证据，无需依据，仅凭丰富想象力即可完成整套人物心理活动推演。" },
+        { skill: "双重标准", desc: "相同行为发生在自己身上叫合理，发生在别人身上叫违规。" },
+        { skill: "胡搅蛮缠", desc: "面对事实与逻辑，小弟选择绕开回答，并迅速切换至新的指控领域。" }
+      ],
+      buff: { name: "【永不认错】", desc: "无论讨论内容为何，都能得出『反正是别人有问题』的结论。" }
+    },
+    moralDelta: { A: +10, B: -20 }
+  },
+  {
+    chapter: "第三关",
+    title: "饭局上的抉择",
+    stage: 3,
+    narrative: `话事人 ■■■ 出面斡旋，邀请梁以忱玩家与你共进晚餐，化解误会。<br><br>
+    梁以忱玩家给了老大面子，坐在了你面前。看着她，你选择：`,
+    choices: [
+      { key: "A", text: "承认问题，解决问题，诚意化解误会" },
+      { key: "B", text: "偷偷全程录音，试图掌握梁以忱玩家的黑料" }
+    ],
+    resultA: { text: "误会得到化解。梁以忱玩家态度软化，纠纷正式结束。", type: "good" },
+    resultB: { text: "你真是一个天生的利己主义者！没错，证据只有掌握在自己手中，才是最有利的。\n\n糟糕……两个小时里，梁以忱玩家竟然一个把柄都没有留下！", type: "bad" },
+    skillUsed: null,
+    moralDelta: { A: +12, B: -18 }
+  },
+  {
+    chapter: "第四关",
+    title: "无中生有·造谣",
+    stage: 4,
+    narrative: `录音毫无收获。梁以忱玩家干净得令人发指。<br><br>
+    没有证据，没有把柄。你选择：`,
+    choices: [
+      { key: "A", text: "没招了，就此罢手，认清现实" },
+      { key: "B", text: "规则是用来打破的，证据是自己创造的。没有证据？那就制造证据！" }
+    ],
+    resultA: { text: "明智的选择。事态没有进一步恶化。", type: "good" },
+    resultB: { text: "使用技能——无中生有。造谣梁以忱玩家在店内散布谣言，顺便给权力竞争者送上一击。\n\n糟糕……梁以忱玩家直接找到了正主，当场澄清。谣言不攻自破！", type: "bad" },
+    skillUsed: {
+      name: "无中生有",
+      desc: "技能激活，目标：散布虚假信息以打击对手。"
+    },
+    moralDelta: { A: +8, B: -22 }
+  },
+  {
+    chapter: "第五关",
+    title: "移花接木·嫁祸",
+    stage: 5,
+    narrative: `谣言已破，形势不利。但你并不打算停下来。<br><br>
+    此时你选择：`,
+    choices: [
+      { key: "A", text: "自认倒霉，就此打住" },
+      { key: "B", text: "一波未平一波再起——激活技能：移花接木" }
+    ],
+    resultA: { text: "保住了仅剩的体面，止损成功。", type: "good" },
+    resultB: { text: "将自身技能『喊我小弟弄你』强行转赠他人，以此推断梁以忱玩家系受其指使，对你发起客诉。一位无辜之人被选定为『幕后主使』。", type: "bad" },
+    skillUsed: {
+      name: "移花接木",
+      desc: "将自己的行为嫁祸于无辜者，并构建完整的虚假逻辑链。"
+    },
+    moralDelta: { A: +5, B: -20 }
+  },
+  {
+    chapter: "第六关",
+    title: "折扣承诺·赖账",
+    stage: 6,
+    narrative: `还记得吗？为了在饭局上稳住梁以忱玩家，你许诺了她下一个本有折扣。<br><br>
+    现在她来兑现承诺了。你选择：`,
+    choices: [
+      { key: "A", text: "信守承诺，履行赔偿，维护信誉" },
+      { key: "B", text: "使用技能——碰到难回答的问题就不说话了" }
+    ],
+    resultA: { text: "诚信履约，玩家满意，口碑提升。", type: "good" },
+    resultB: { text: "大言不惭地表示自己在休假，不管工作事宜，成功将梁以忱玩家打退。\n\n太好了，梁以忱玩家被你持续的技能震慑，放弃追讨折扣。", type: "bad" },
+    skillUsed: {
+      name: "碰到难回答的问题就不说话了",
+      desc: "技能激活——以「休假」为由，成功规避一切责任追究。"
+    },
+    moralDelta: { A: +10, B: -15 }
+  },
+  {
+    chapter: "第七关",
+    title: "最终炸车事件",
+    stage: 7,
+    narrative: `梁以忱又上了一车你的 <span class="npc-name">醉凌云</span>。虽然她那车是苏浅语，你是冷刃，两人之前并无过多交集——<br><br>
+    但你连她的脸都不想看到。你选择：`,
+    choices: [
+      { key: "A", text: "忍一忍算了，赚钱重要，专业为先" },
+      { key: "B", text: "威胁醉凌云车头：不把梁以忱踢下车，你就炸车" }
+    ],
+    resultA: { text: "专业坚守，留住了客源，也守住了底线。", type: "good" },
+    resultB: { text: "醉凌云炸车了。你又一次达成了心中所想。\n\n恭喜您，通关！", type: "bad" },
+    skillUsed: null,
+    moralDelta: { A: +8, B: -20 }
+  }
+];
+
+let currentScene = 0;
+let bCount = 0;
+let totalMoral = 0;
+let choiceMade = false;
+
+function buildScene(index) {
+  const scene = SCENES[index];
+  const wrap = document.createElement('div');
+  wrap.className = 'scene-container';
+  wrap.id = `scene-${index}`;
+
+  let skillHTML = '';
+  if (scene.skillUsed && scene.skillUsed.combo) {
+    const logsHTML = scene.skillUsed.logs.map(l => `
+      <div class="log-line">
+        <span class="log-slash">//</span>
+        <span class="log-skill">${l.skill}</span>
+        <span class="log-text">${l.desc}</span>
+      </div>`).join('');
+
+    skillHTML = `
+      <div class="buff-banner" style="display:none" id="buff-${index}">
+        <div class="buff-name">${scene.skillUsed.buff.name}</div>
+        <div class="buff-desc">${scene.skillUsed.buff.desc}</div>
+      </div>
+      <div class="system-log-toggle" onclick="toggleLogs(${index})" id="toggle-${index}" style="display:none">
+        <span class="arrow">▶</span>
+        <span>展开系统消息</span>
+      </div>
+      <div class="system-logs" id="logs-${index}">
+        ${logsHTML}
+      </div>`;
+  } else if (scene.skillUsed) {
+    skillHTML = `
+      <div class="buff-banner" style="display:none" id="buff-${index}">
+        <div class="buff-name">技能激活：${scene.skillUsed.name}</div>
+        <div class="buff-desc">${scene.skillUsed.desc}</div>
+      </div>`;
+  }
+
+  const choicesHTML = scene.choices.map(c => `
+    <button class="choice-btn" onclick="choose(${index}, '${c.key}')" id="btn-${index}-${c.key}">
+      <span class="choice-key key-${c.key.toLowerCase()}">${c.key}</span>
+      <span class="choice-text">${c.text}</span>
+    </button>`).join('');
+
+  wrap.innerHTML = `
+    <div class="scene-header">
+      <span class="scene-dot"></span>
+      <span class="scene-chapter">${scene.chapter}</span>
+      <span style="color:var(--border2)">·</span>
+      <span class="scene-title">${scene.title}</span>
+    </div>
+    <div class="scene-body">
+      <p class="narrator-text">${scene.narrative}</p>
+      ${skillHTML}
+    </div>
+    <div class="choice-panel">
+      <div class="choice-label">// 你的选择</div>
+      <div class="choices">${choicesHTML}</div>
+    </div>
+    <div class="result-panel" id="result-${index}"></div>
+  `;
+  return wrap;
+}
+
+function choose(idx, key) {
+  const scene = SCENES[idx];
+  const isB = key === 'B';
+  const result = isB ? scene.resultB : scene.resultA;
+
+  // Disable all buttons
+  scene.choices.forEach(c => {
+    const btn = document.getElementById(`btn-${idx}-${c.key}`);
+    btn.disabled = true;
+    if (c.key === key) btn.classList.add(`selected-${key.toLowerCase()}`);
+  });
+
+  // Update moral
+  const delta = isB ? scene.moralDelta.B : scene.moralDelta.A;
+  totalMoral += delta;
+  document.getElementById('moral-val').textContent = totalMoral;
+
+  if (isB) bCount++;
+
+  // Show buff if B
+  if (isB && document.getElementById(`buff-${idx}`)) {
+    document.getElementById(`buff-${idx}`).style.display = 'flex';
+    document.getElementById(`buff-${idx}`).style.flexDirection = 'column';
+  }
+  if (isB && document.getElementById(`toggle-${idx}`)) {
+    document.getElementById(`toggle-${idx}`).style.display = 'flex';
+  }
+
+  // Show result
+  const resultEl = document.getElementById(`result-${idx}`);
+  const resultClass = result.type === 'good' ? 'result-good' : 'result-bad';
+  const resultIcon = result.type === 'good' ? '✓' : '⚠';
+  const isLast = idx === SCENES.length - 1;
+
+  resultEl.innerHTML = `
+    <div class="${resultClass}">
+      <span class="result-icon">${resultIcon}</span>
+      <span>${result.text.replace(/\n/g, '<br>')}</span>
+    </div>
+    ${!isLast ? `<button class="result-next-btn" onclick="nextScene(${idx})">
+      继续 <span class="arrow">→</span>
+    </button>` : `<button class="result-next-btn" onclick="showEnding()">
+      查看结局 <span class="arrow">→</span>
+    </button>`}
+  `;
+  resultEl.classList.add('visible');
+
+  // Update progress
+  const done = idx + 1;
+  document.getElementById('progress-fill').style.width = `${(done / SCENES.length) * 100}%`;
+  document.getElementById('progress-count').textContent = `${done} / ${SCENES.length}`;
+  document.getElementById('stage-val').textContent = `第 ${done} 关`;
+}
+
+function nextScene(currentIdx) {
+  const nextIdx = currentIdx + 1;
+  if (nextIdx >= SCENES.length) { showEnding(); return; }
+
+  const container = document.getElementById('scenes-container');
+  const next = buildScene(nextIdx);
+  container.appendChild(next);
+  setTimeout(() => next.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+function toggleLogs(idx) {
+  const logsEl = document.getElementById(`logs-${idx}`);
+  const toggleEl = document.getElementById(`toggle-${idx}`);
+  const isOpen = logsEl.classList.contains('visible');
+  if (isOpen) {
+    logsEl.classList.remove('visible');
+    toggleEl.classList.remove('open');
+  } else {
+    logsEl.classList.add('visible');
+    toggleEl.classList.add('open');
+  }
+}
+
+function showEnding() {
+  document.getElementById('end-choices').textContent = SCENES.length;
+  document.getElementById('end-b-count').textContent = bCount;
+  document.getElementById('end-moral').textContent = totalMoral;
+  const endScreen = document.getElementById('ending-screen');
+  endScreen.classList.add('visible');
+  setTimeout(() => endScreen.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+function restartGame() {
+  totalMoral = 0;
+  bCount = 0;
+  currentScene = 0;
+  document.getElementById('moral-val').textContent = '0';
+  document.getElementById('stage-val').textContent = '第 1 关';
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('progress-count').textContent = '0 / ' + SCENES.length;
+  document.getElementById('ending-screen').classList.remove('visible');
+  document.getElementById('scenes-container').innerHTML = '';
+  unlockSkills(-1);
+  init();
+}
+
+function unlockSkills(upTo) {
+  document.querySelectorAll('.skill-badge').forEach((el, i) => {
+    if (i <= upTo) el.classList.add('unlocked');
+    else el.classList.remove('unlocked');
+  });
+}
+
+function init() {
+  const container = document.getElementById('scenes-container');
+  container.innerHTML = '';
+  container.appendChild(buildScene(0));
+  unlockSkills(4);
+}
+
+init();
+</script>
+</body>
+</html>
